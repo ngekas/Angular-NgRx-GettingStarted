@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 
 import { AuthService } from './auth.service';
 import { Store, select } from '@ngrx/store';
+import * as fromUsers from './state/login.reducer';
 
 @Component({
   templateUrl: './login.component.html',
@@ -14,22 +15,22 @@ export class LoginComponent implements OnInit {
   errorMessage: string;
 
   maskUserName: boolean;
+  currentUser: string;
 
-  constructor(private store: Store<any>,
+  constructor(private store: Store<fromUsers.State>,
               private authService: AuthService,
               private router: Router) {
   }
 
   ngOnInit(): void {
-    // subscribe to receive change notifications from the "products" slice within the store
-    // every time the state changes, we receive the entire "products" slice
-    this.store.pipe(select('users')).subscribe(
-      user => {
-        if (user) { // need the "if" because when the application is first executed, its state is undefined
-          this.maskUserName = user.maskUserName;
-        }
-      }
+    this.store.pipe(select(fromUsers.getMaskUserName)).subscribe(
+      maskUserName => this.maskUserName = maskUserName
     );
+
+    this.store.pipe(select(fromUsers.getCurrentUser)).subscribe(
+      currentUser => this.currentUser = currentUser
+    );
+
   }
 
   cancel(): void {
@@ -48,6 +49,11 @@ export class LoginComponent implements OnInit {
       const userName = loginForm.form.value.userName;
       const password = loginForm.form.value.password;
       this.authService.login(userName, password);
+
+      this.store.dispatch({
+        type: 'CURRENT_USER',
+        payload: userName
+      });
 
       if (this.authService.redirectUrl) {
         this.router.navigateByUrl(this.authService.redirectUrl);

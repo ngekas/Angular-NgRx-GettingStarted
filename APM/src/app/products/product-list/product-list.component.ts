@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { Product } from '../product';
 import { ProductService } from '../product.service';
 import { Store, select } from '@ngrx/store';
+import * as fromProduct from '../state/product.reducer';
 
 @Component({
   selector: 'pm-product-list',
@@ -24,7 +25,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   sub: Subscription;
 
   constructor(private productService: ProductService,
-              private store: Store<any>) { }
+              private store: Store<fromProduct.State>) { } // Note: product.reducer file contains the complete State type definition
+                                                           // at this point (due to the extended State syntax to handle lazy loading
+                                                           // of products module). Chapter 6 4 - Strongly Typing the state
 
   ngOnInit(): void {
     this.sub = this.productService.selectedProductChanges$.subscribe(
@@ -36,14 +39,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
       error: (err: any) => this.errorMessage = err.error
     });
 
-    // subscribe to receive change notifications from the "products" slice within the store
-    // every time the state changes, we receive the entire "products" slice
-    this.store.pipe(select('products')).subscribe(
-      products => {
-        if (products) { // need the "if" because when the application is first executed, its state is undefined
-          this.displayCode = products.showProductCode;
-        }
-      }
+    // Now instead of returning the entire 'products' state, we now only need to return the showProductCode property
+    // (ie. from products to showProductCode)
+    this.store.pipe(select(fromProduct.getShowProductCode)).subscribe(
+      showProductCode => this.displayCode = showProductCode
     );
   }
 
@@ -53,7 +52,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   checkChanged(value: boolean): void {
     this.store.dispatch({
-      type: 'MASK_USER_NAME',
+      type: 'TOGGLE_PRODUCT_CODE',
       payload: value
     });
   }
