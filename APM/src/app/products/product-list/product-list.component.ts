@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 
 import { Product } from '../product';
 import { ProductService } from '../product.service';
+import { Store, select } from '@ngrx/store';
 
 @Component({
   selector: 'pm-product-list',
@@ -22,7 +23,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   selectedProduct: Product | null;
   sub: Subscription;
 
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService,
+              private store: Store<any>) { }
 
   ngOnInit(): void {
     this.sub = this.productService.selectedProductChanges$.subscribe(
@@ -33,6 +35,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
       next: (products: Product[]) => this.products = products,
       error: (err: any) => this.errorMessage = err.error
     });
+
+    // subscribe to receive change notifications from the "products" slice within the store
+    // every time the state changes, we receive the entire "products" slice
+    this.store.pipe(select('products')).subscribe(
+      products => {
+        if (products) { // need the "if" because when the application is first executed, its state is undefined
+          this.displayCode = products.showProductCode;
+        }
+      }
+    );
   }
 
   ngOnDestroy(): void {
@@ -40,7 +52,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   checkChanged(value: boolean): void {
-    this.displayCode = value;
+    this.store.dispatch({
+      type: 'MASK_USER_NAME',
+      payload: value
+    });
   }
 
   newProduct(): void {

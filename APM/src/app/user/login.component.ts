@@ -3,6 +3,7 @@ import { NgForm } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 
 import { AuthService } from './auth.service';
+import { Store, select } from '@ngrx/store';
 
 @Component({
   templateUrl: './login.component.html',
@@ -14,12 +15,21 @@ export class LoginComponent implements OnInit {
 
   maskUserName: boolean;
 
-  constructor(private authService: AuthService,
+  constructor(private store: Store<any>,
+              private authService: AuthService,
               private router: Router) {
   }
 
   ngOnInit(): void {
-
+    // subscribe to receive change notifications from the "products" slice within the store
+    // every time the state changes, we receive the entire "products" slice
+    this.store.pipe(select('users')).subscribe(
+      user => {
+        if (user) { // need the "if" because when the application is first executed, its state is undefined
+          this.maskUserName = user.maskUserName;
+        }
+      }
+    );
   }
 
   cancel(): void {
@@ -27,7 +37,10 @@ export class LoginComponent implements OnInit {
   }
 
   checkChanged(value: boolean): void {
-    this.maskUserName = value;
+    this.store.dispatch({
+      type: 'MASK_USER_NAME',
+      payload: value
+    });
   }
 
   login(loginForm: NgForm): void {
