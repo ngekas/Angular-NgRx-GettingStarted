@@ -4,7 +4,8 @@
     {{pageTitle}}
   </div>
 
-  <div class="card-body" *ngIf="products?.length">
+  <!-- async pipe - does the subscribing and unsubscribing automatically -->
+  <div class="card-body" *ngIf="products$ | async as products"> <!-- "as products" - assign the resolved observable to template variable "products" -->
     <div class="list-group">
       <button class="list-group-item list-group-item-action rounded-0"
           *ngFor="let product of products"
@@ -36,6 +37,6 @@
     </div>
   </div>
 </div>
-<div *ngIf="errorMessage" class="alert alert-danger">
+<div *ngIf="errorMessage$ | async as errorMessage" class="alert alert-danger">
   Error: {{ errorMessage }}
 </div>
