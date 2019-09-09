@@ -1,12 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Subscription } from 'rxjs';
-
 import { Product } from '../product';
 import { ProductService } from '../product.service';
 import { GenericValidator } from '../../shared/generic-validator';
 import { NumberValidators } from '../../shared/number.validator';
+
+import { Store, select} from '@ngrx/store';
+import * as fromProduct from '../state/product.reducer';
+import * as productActions from '../state/product.actions';
 
 @Component({
   selector: 'pm-product-edit',
@@ -19,14 +21,14 @@ export class ProductEditComponent implements OnInit, OnDestroy {
   productForm: FormGroup;
 
   product: Product | null;
-  sub: Subscription;
 
   // Use with the generic validation message class
   displayMessage: { [key: string]: string } = {};
   private validationMessages: { [key: string]: { [key: string]: string } };
   private genericValidator: GenericValidator;
 
-  constructor(private fb: FormBuilder,
+  constructor(private store: Store<fromProduct.State>, // we need product information so we supply extended state
+              private fb: FormBuilder,                 // interface from the product reducer with a generic argument
               private productService: ProductService) {
 
     // Defines all of the validation messages for the form.
@@ -62,9 +64,16 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     });
 
     // Watch for changes to the currently selected product
-    this.sub = this.productService.selectedProductChanges$.subscribe(
-      selectedProduct => this.displayProduct(selectedProduct)
+    this.store.pipe(select(fromProduct.getCurrentProduct)).subscribe(
+      currentProduct => this.displayProduct(currentProduct)
     );
+
+    // old
+    // this.sub = this.productService.selectedProductChanges$.subscribe(
+    //   selectedProduct => this.displayProduct(selectedProduct)
+    // );
+
+
 
     // Watch for value changes
     this.productForm.valueChanges.subscribe(
@@ -72,9 +81,7 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void {
-    this.sub.unsubscribe();
-  }
+  ngOnDestroy(): void {}
 
   // Also validate on blur
   // Helpful if the user tabs through required fields
@@ -117,13 +124,15 @@ export class ProductEditComponent implements OnInit, OnDestroy {
     if (this.product && this.product.id) {
       if (confirm(`Really delete the product: ${this.product.productName}?`)) {
         this.productService.deleteProduct(this.product.id).subscribe({
-          next: () => this.productService.changeSelectedProduct(null),
+          next: () => this.store.dispatch(new productActions.ClearCurrentProduct()),
+                   // old: this.productService.changeSelectedProduct(null),
           error: err => this.errorMessage = err.error
         });
       }
     } else {
       // No need to delete, it was never saved
-      this.productService.changeSelectedProduct(null);
+      this.store.dispatch(new productActions.ClearCurrentProduct())
+      // old this.productService.changeSelectedProduct(null);
     }
   }
 
@@ -137,12 +146,14 @@ export class ProductEditComponent implements OnInit, OnDestroy {
 
         if (p.id === 0) {
           this.productService.createProduct(p).subscribe({
-            next: product => this.productService.changeSelectedProduct(product),
+            next: product => this.store.dispatch(new productActions.SetCurrentProduct(product)),
+                           // old: this.productService.changeSelectedProduct(product),
             error: err => this.errorMessage = err.error
           });
         } else {
           this.productService.updateProduct(p).subscribe({
-            next: product => this.productService.changeSelectedProduct(product),
+            next: product => this.store.dispatch(new productActions.SetCurrentProduct(product)),
+                           // old: this.productService.changeSelectedProduct(product),
             error: err => this.errorMessage = err.error
           });
         }

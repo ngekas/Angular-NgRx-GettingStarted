@@ -1,6 +1,7 @@
 import { Product } from '../product';
 import * as fromRoot from '../../state/app.state';  // fromRoot is a namespace name
 import { createFeatureSelector, createSelector } from '@ngrx/store';
+import { ProductActions, ProductActionTypes } from './product.actions';
 
 // tslint:disable-next-line: max-line-length
 export interface State extends fromRoot.State { // This is needed as products module is lazy loaded (Ch 06 3 - Extending the State interface)
@@ -40,13 +41,40 @@ export const getProducts = createSelector(
 
 // The 1st parameter is the state of the "products" slice from the store
 // 2nd parameter is the action to be processed
-export function reducer(state = initialState, action): ProductState {
+export function reducer(state = initialState, action: ProductActions): ProductState {
   switch (action.type) {
-    case 'TOGGLE_PRODUCT_CODE':
+    case ProductActionTypes.ToggleProductCode:
       return {
         ...state, // Must clone the "products" slice state first and replace
                   // this slice with the new state that contains the new showProductCode value
         showProductCode: action.payload  // We update the showProductCode property on the store with the value of the payload
+      };
+    case ProductActionTypes.SetCurrentProduct:
+      return {
+        ...state,
+        currentProduct: { ...action.payload } // the payload is an object so we need to prevent side-effects and clone the payload object
+      };
+    case ProductActionTypes.InitialiseCurrentProduct:
+      return {
+        ...state,
+        currentProduct: {
+          id: 0,
+          productName: '',
+          productCode: 'New',
+          description: '',
+          starRating: 0
+        }
+      };
+      case ProductActionTypes.ClearCurrentProduct:
+        return {
+          ...state,
+          currentProduct: {
+            id: 0,
+            productName: '',
+            productCode: '',
+            description: '',
+            starRating: 0
+        }
       };
     default:
       return state;

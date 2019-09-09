@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Store, select } from '@ngrx/store';
 import * as fromUsers from './state/login.reducer';
+import { UserActionTypes } from './state/login.actions';
 
 @Component({
   templateUrl: './login.component.html',
@@ -39,7 +40,7 @@ export class LoginComponent implements OnInit {
 
   checkChanged(value: boolean): void {
     this.store.dispatch({
-      type: 'MASK_USER_NAME',
+      type: UserActionTypes.MaskUserName,
       payload: value
     });
   }
@@ -51,7 +52,7 @@ export class LoginComponent implements OnInit {
       this.authService.login(userName, password);
 
       this.store.dispatch({
-        type: 'CURRENT_USER',
+        type: UserActionTypes.SetCurrentUser,
         payload: userName
       });
 
